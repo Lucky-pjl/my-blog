@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pjl.blog.dao.BlogDao">
+
+
+    <select id="getBlogById" resultType="blog">
+        select id,title,flag,content,type_id,first_picture,recommend,update_time,description
+        from t_blog
+        where id =#{id}
+    </select>
+
+    <select id="getAllAdminBlog" resultType="adminBlog">
+        select b.id,b.title,b.update_time,b.recommend,ty.name typeName
+        from t_blog b,t_type ty
+        where b.type_id=ty.id
+    </select>
+
+    <select id="getAdminBlogBySearch" resultType="adminBlog">
+        <bind name="pattern" value="'%' + title + '%'"/>
+        select b.id,b.title,b.update_time,b.recommend,ty.name typeName
+        from t_blog b,t_type ty
+        <where>
+            <if test="1 == 1">
+                b.type_id=ty.id
+            </if>
+            <if test="typeId != null">
+                and b.type_id=#{typeId}
+            </if>
+            <if test="1 == 1">
+                and b.recommend=#{recommend}
+            </if>
+            <if test="title != null and title != ''">
+                and b.title like #{pattern}
+            </if>
+
+        </where>
+    </select>
+
+
+    <insert id="saveBlogAndTag">
+        insert into t_blog_tags (blog_id,tag_id)
+        values
+        <foreach collection="bts" item="bt" separator=",">
+            (#{bt.blog_id},#{bt.tag_id})
+        </foreach>
+    </insert>
+
+    <insert id="saveBlog" useGeneratedKeys="true" keyProperty="id">
+        insert into t_blog (title, content,recommend, first_picture, flag, views, create_time, update_time, type_id, user_id,description)
+        values
+        (#{title},#{content},#{recommend},#{firstPicture},#{flag},#{views},#{createTime},#{updateTime},#{typeId},#{userId},#{description})
+    </insert>
+
+    <delete id="deleteBlog">
+        delete from t_blog where id =#{id}
+    </delete>
+
+    <delete id="deleteBlogAndTag">
+        delete from t_blog_tags where blog_id =#{id}
+    </delete>
+
+    <update id="updateBlog">
+        update t_blog
+        set
+        title=#{title},
+        content=#{content},
+        recommend=#{recommend},
+        first_picture=#{firstPicture},
+        update_time=#{updateTime},
+        type_id=#{typeId},
+        description=#{description}
+        where id=#{id}
+    </update>
+
+    <!--获取博客对于的所有tagId-->
+    <select id="getTagsByBlogId" resultType="integer">
+        select tag_id from t_blog_tags where blog_id=#{id}
+    </select>
+
+    <select id="getTags" resultType="tag">
+        select ta.id,ta.name
+        from t_tag ta,t_blog_tags bt
+        where bt.blog_id=#{id}
+        and ta.id=bt.tag_id
+    </select>
+
+    <!--  获取首页显示的博客信息  -->
+    <select id="getFirstPageBlog" resultType="firstPageBlog">
+        select b.id,b.title,b.first_picture,b.views,b.update_time,b.description,
+        ty.name typeName,u.nickname,u.avatar
+        from t_blog b,t_type ty,t_user u
+        where b.type_id=ty.id
+        and  b.user_id=u.id
+    </select>
+
+    <select id="getRecommendBlog" resultType="recommendBlog">
+        select id,title,recommend
+        from t_blog
+        where recommend=1
+        order by update_time desc
+        limit 3
+    </select>
+
+    <!--  博客搜索功能  -->
+    <select id="searchBlog" resultType="firstPageBlog">
+        <bind name="pattern" value="'%' + query + '%'"/>
+        select b.id,b.title,b.first_picture,b.views,b.update_time,b.description,
+        ty.name typeName,u.nickname,u.avatar
+        from t_blog b,t_type ty,t_user u
+        where b.type_id=ty.id
+        and b.user_id=u.id
+        and (b.title like #{pattern} or b.recommend like #{pattern})
+    </select>
+
+    <!-- 博客详情页面数据   -->
+    <select id="getDetailedBlogById" resultType="detailedBlog">
+        select b.id,b.title,b.content,b.first_picture,b.flag,b.views,b.update_time,
+        ty.name typeName,u.nickname,u.avatar
+        from t_blog b,t_type ty,t_user u
+        where b.id=#{id}
+        and b.type_id=ty.id
+        and b.user_id=u.id
+    </select>
+
+
+    <update id="viewAdd">
+        update t_blog
+        set views=views+1
+        where id=#{id}
+    </update>
+
+    <!--  根据类型查询博客  -->
+    <select id="getBlogByTypeId" resultType="firstPageBlog">
+        select b.id,b.title,b.first_picture,b.views,b.update_time,b.description,
+        ty.name typeName,u.nickname,u.avatar
+        from t_blog b,t_type ty,t_user u
+        where b.type_id=#{id}
+        and b.type_id=ty.id
+        and  b.user_id=u.id
+    </select>
+
+
+    <!--  根据标签查询博客  -->
+    <select id="getBlogByTagId" resultType="firstPageBlog">
+        select b.id,b.title,b.first_picture,b.views,b.update_time,b.description,
+        ty.name typeName,u.nickname,u.avatar
+        from t_blog b,t_type ty,t_user u,t_blog_tags bt
+        where bt.tag_id =#{id}
+        and bt.blog_id = b.id
+        and b.type_id=ty.id
+        and  b.user_id=u.id
+    </select>
+
+    <!--  查询所有博客涉及的年份  -->
+    <select id="findGroupYear" resultType="string">
+        select date_format(b.update_time,'%Y') as year
+        from t_blog b
+        GROUP BY year
+        order by year
+    </select>
+
+    <!--  根据年份查询博客列表  -->
+    <select id="getBlogByYear" resultType="blog">
+        select id,title,flag,update_time updateTime
+        from t_blog
+        where date_format(update_time,'%Y')=#{year}
+    </select>
+
+    <select id="countBlog" resultType="integer">
+        select count(*) from t_blog
+    </select>
+</mapper>
