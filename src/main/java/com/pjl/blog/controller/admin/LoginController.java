@@ -2,6 +2,11 @@ package com.pjl.blog.controller.admin;
 
 import com.pjl.blog.pojo.User;
 import com.pjl.blog.service.UserService;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.IncorrectCredentialsException;
+import org.apache.shiro.authc.UnknownAccountException;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,36 +23,42 @@ import javax.websocket.Session;
  * @create 2020-02-01-14:43
  */
 @Controller
-@RequestMapping("/admin")
 public class LoginController {
 
     @Autowired
     private UserService userService;
 
-    @GetMapping
+    @GetMapping("/admin")
     public String loginPage(){
         return "admin/login";
     }
 
-    @PostMapping("/login")
+    @PostMapping("/admin/login")
     public String login(@RequestParam String username, @RequestParam String password,
-                        HttpSession session,
                         RedirectAttributes attributes){
-        User user = userService.checkUser(username,password);
-        if(user != null){
-            user.setPassword(null);
-            session.setAttribute("user",user);
-            return "admin/index";
-        }else{
 
-            attributes.addFlashAttribute("message","用户名密码错误");
+        System.out.println("用户名：" + username + "   密码：" + password);
+        //获取当前的用户
+        Subject subject = SecurityUtils.getSubject();
+        //封装用户的登录数据
+        UsernamePasswordToken token = new UsernamePasswordToken(username, password);
+        try {
+            subject.login(token); //执行登录的方法，如果没有异常说明ok
+            return "admin/index";
+        } catch (UnknownAccountException e) {//用户名不存在
+            attributes.addFlashAttribute("message", "用户名错误");
+            return "redirect:/admin";
+        } catch (IncorrectCredentialsException e) {//密码不存在
+            attributes.addFlashAttribute("message", "密码错误");
             return "redirect:/admin";
         }
-    }
 
-    @GetMapping("/loginout")
-    public String loginout(HttpSession session){
-        session.removeAttribute("user");
+        }
+
+    @GetMapping("/admin/loginout")
+    public String loginout(){
+        Subject subject = SecurityUtils.getSubject();
+        subject.logout();
         return "redirect:/admin";
     }
 }
