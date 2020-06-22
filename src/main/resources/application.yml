@@ -14,6 +14,10 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
 
+  redis:
+    host: 39.107.242.196
+    port: 6379
+
     initialSize: 5
     minIdle: 5
     maxActive: 20

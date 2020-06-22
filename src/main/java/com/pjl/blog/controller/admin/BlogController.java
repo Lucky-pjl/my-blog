@@ -119,6 +119,6 @@ public class BlogController {
     public String delete(@PathVariable Integer id, RedirectAttributes attributes) {
         blogService.deleteBlog(id);
         attributes.addFlashAttribute("message", "删除成功");
-        return "redirect:/admin/blogs";
+        return "redirect:/admin/index";
     }
 }

@@ -37,7 +37,6 @@ public class LoginController {
     public String login(@RequestParam String username, @RequestParam String password,
                         RedirectAttributes attributes){
 
-        System.out.println("用户名：" + username + "   密码：" + password);
         //获取当前的用户
         Subject subject = SecurityUtils.getSubject();
         //封装用户的登录数据

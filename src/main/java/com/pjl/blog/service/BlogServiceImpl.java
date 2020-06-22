@@ -6,6 +6,10 @@ import com.pjl.blog.pojo.Blog;
 import com.pjl.blog.pojo.Tag;
 import com.pjl.blog.util.MarkdownUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +25,7 @@ public class BlogServiceImpl implements BlogService{
     @Autowired
     private BlogDao blogDao;
 
+    @Cacheable(value = "blog",key = "#id")
     @Override
     public Blog getBlogById(Integer id) {
         return blogDao.getBlogById(id);
@@ -38,6 +43,7 @@ public class BlogServiceImpl implements BlogService{
     }
 
     //添加与修改博客公用  如果传递的博客id为空则是添加
+    @CachePut(value = "blog",key = "#blog.id")
     @Transactional
     @Override
     public int saveBlog(Blog blog) {
@@ -67,10 +73,14 @@ public class BlogServiceImpl implements BlogService{
 
         }
 
-
         return i;
     }
 
+    @Caching(
+        evict = {
+                @CacheEvict(value = "blog",key = "#blog.id+'detail'")
+        }
+    )
     @Transactional
     @Override
     public int updateBlog(Blog blog) {
@@ -78,6 +88,7 @@ public class BlogServiceImpl implements BlogService{
         return blogDao.updateBlog(blog);
     }
 
+    @CacheEvict(value = "blog",key = "#blog.id")
     @Transactional
     @Override
     public int deleteBlog(Integer id) {
@@ -132,6 +143,7 @@ public class BlogServiceImpl implements BlogService{
     }
 
     //获取一篇博客的详细信息，传递到详情页面
+    @Cacheable(cacheNames = "blog",key = "#id+'detail'")
     @Override
     public DetailedBlog getDetailBlog(Integer id) {
         DetailedBlog blog = blogDao.getDetailedBlogById(id);
